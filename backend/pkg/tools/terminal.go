@@ -212,14 +212,24 @@ func (t *terminal) getExecResult(ctx context.Context, id string, timeout time.Du
 
 	dst := bytes.Buffer{}
 	done := make(chan struct{})
+	var copyErr error
 	go func() {
-		_, err = io.Copy(&dst, resp.Reader)
+		_, copyErr = io.Copy(&dst, resp.Reader)
 		close(done)
 	}()
 
 	select {
 	case <-done:
+		err = copyErr
 	case <-ctx.Done():
+		// Close the response to unblock the io.Copy goroutine immediately,
+		// preventing it from leaking by blocking on resp.Reader indefinitely.
+		resp.Close()
+		// Wait for the goroutine to finish to avoid a data race on dst.
+		select {
+		case <-done:
+		case <-time.After(5 * time.Second):
+		}
 		result := fmt.Sprintf("temporary output: %s", dst.String())
 		err = fmt.Errorf("timeout value is too low, use greater value if you need so: %w: %s", ctx.Err(), result)
 	}
