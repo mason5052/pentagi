@@ -295,6 +295,14 @@ func (t *terminal) ReadFile(ctx context.Context, flowID int64, path string) (str
 			)
 		}
 
+		const maxReadFileSize int64 = 50 * 1024 * 1024 // 50MB
+		if tarHeader.Size > maxReadFileSize {
+			return "", fmt.Errorf("file '%s' size %d exceeds maximum allowed size %d", tarHeader.Name, tarHeader.Size, maxReadFileSize)
+		}
+		if tarHeader.Size < 0 {
+			return "", fmt.Errorf("file '%s' has invalid size %d", tarHeader.Name, tarHeader.Size)
+		}
+
 		var fileContent = make([]byte, tarHeader.Size)
 		_, err = tarReader.Read(fileContent)
 		if err != nil && err != io.EOF {
@@ -345,6 +353,10 @@ func (t *terminal) WriteFile(ctx context.Context, flowID int64, content string, 
 	_, err = tarWriter.Write([]byte(content))
 	if err != nil {
 		return "", fmt.Errorf("failed to write tar content: %w", err)
+	}
+
+	if err = tarWriter.Close(); err != nil {
+		return "", fmt.Errorf("failed to close tar writer: %w", err)
 	}
 
 	dir := filepath.Dir(path)
