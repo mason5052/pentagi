@@ -107,7 +107,7 @@ func (p *AuthMiddleware) tryUserCookieAuthentication(c *gin.Context) (authResult
 
 	prms, ok := prm.([]string)
 	if !ok {
-		return authResultFail, errors.New("no pemissions granted")
+		return authResultFail, errors.New("no permissions granted")
 	}
 
 	// Verify session expiration
@@ -120,8 +120,14 @@ func (p *AuthMiddleware) tryUserCookieAuthentication(c *gin.Context) (authResult
 	}
 
 	// Verify user hash matches database
-	userID := uid.(uint64)
-	sessionHash := uhash.(string)
+	userID, ok := uid.(uint64)
+	if !ok {
+		return authResultFail, errors.New("uid claim has invalid type")
+	}
+	sessionHash, ok := uhash.(string)
+	if !ok {
+		return authResultFail, errors.New("uhash claim has invalid type")
+	}
 
 	dbHash, userStatus, err := p.userCache.GetUserHash(userID)
 	if err != nil {
@@ -143,14 +149,31 @@ func (p *AuthMiddleware) tryUserCookieAuthentication(c *gin.Context) (authResult
 		return authResultFail, errors.New("user hash mismatch - session invalid for this installation")
 	}
 
+	ridVal, ok := rid.(uint64)
+	if !ok {
+		return authResultFail, errors.New("rid claim has invalid type")
+	}
+	gtmVal, ok := gtm.(int64)
+	if !ok {
+		return authResultFail, errors.New("gtm claim has invalid type")
+	}
+	tidVal, ok := tid.(string)
+	if !ok {
+		return authResultFail, errors.New("tid claim has invalid type")
+	}
+	unameVal, ok := uname.(string)
+	if !ok {
+		return authResultFail, errors.New("uname claim has invalid type")
+	}
+
 	c.Set("prm", prms)
 	c.Set("uid", userID)
 	c.Set("uhash", sessionHash)
-	c.Set("rid", rid.(uint64))
-	c.Set("exp", exp.(int64))
-	c.Set("gtm", gtm.(int64))
-	c.Set("tid", tid.(string))
-	c.Set("uname", uname.(string))
+	c.Set("rid", ridVal)
+	c.Set("exp", expVal)
+	c.Set("gtm", gtmVal)
+	c.Set("tid", tidVal)
+	c.Set("uname", unameVal)
 
 	if slices.Contains(prms, PrivilegeAutomation) {
 		c.Set("cpt", "automation")
