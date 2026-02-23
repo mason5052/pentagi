@@ -281,23 +281,23 @@ func (t *perplexity) handleErrorResponse(statusCode int) error {
 	case http.StatusBadRequest:
 		return errors.New("request is invalid")
 	case http.StatusUnauthorized:
-		return errors.New("API key is wrong")
+		return errors.New("API key is invalid")
 	case http.StatusForbidden:
 		return errors.New("the endpoint requested is hidden for administrators only")
 	case http.StatusNotFound:
 		return errors.New("the specified endpoint could not be found")
 	case http.StatusMethodNotAllowed:
-		return errors.New("there need to try to access an endpoint with an invalid method")
+		return errors.New("the endpoint does not allow this HTTP method")
 	case http.StatusTooManyRequests:
-		return errors.New("there are requesting too many results")
+		return errors.New("too many requests, please slow down")
 	case http.StatusInternalServerError:
-		return errors.New("there had a problem with our server. try again later")
+		return errors.New("the server encountered an error, please try again later")
 	case http.StatusBadGateway:
 		return errors.New("there was a problem with the server. Please try again later")
 	case http.StatusServiceUnavailable:
-		return errors.New("there are temporarily offline for maintenance. please try again later")
+		return errors.New("the service is temporarily unavailable, please try again later")
 	case http.StatusGatewayTimeout:
-		return errors.New("there are temporarily offline for maintenance. please try again later")
+		return errors.New("the service is temporarily unavailable, please try again later")
 	default:
 		return fmt.Errorf("unexpected status code: %d", statusCode)
 	}

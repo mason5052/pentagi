@@ -180,23 +180,23 @@ func (t *tavily) parseHTTPResponse(ctx context.Context, resp *http.Response) (st
 	case http.StatusBadRequest:
 		return "", fmt.Errorf("request is invalid")
 	case http.StatusUnauthorized:
-		return "", fmt.Errorf("API key is wrong")
+		return "", fmt.Errorf("API key is invalid")
 	case http.StatusForbidden:
 		return "", fmt.Errorf("the endpoint requested is hidden for administrators only")
 	case http.StatusNotFound:
 		return "", fmt.Errorf("the specified endpoint could not be found")
 	case http.StatusMethodNotAllowed:
-		return "", fmt.Errorf("there need to try to access an endpoint with an invalid method")
+		return "", fmt.Errorf("the endpoint does not allow this HTTP method")
 	case http.StatusTooManyRequests:
-		return "", fmt.Errorf("there are requesting too many results")
+		return "", fmt.Errorf("too many requests, please slow down")
 	case http.StatusInternalServerError:
-		return "", fmt.Errorf("there had a problem with our server. try again later")
+		return "", fmt.Errorf("the server encountered an error, please try again later")
 	case http.StatusBadGateway:
 		return "", fmt.Errorf("there was a problem with the server. Please try again later")
 	case http.StatusServiceUnavailable:
-		return "", fmt.Errorf("there are temporarily offline for maintenance. please try again later")
+		return "", fmt.Errorf("the service is temporarily unavailable, please try again later")
 	case http.StatusGatewayTimeout:
-		return "", fmt.Errorf("there are temporarily offline for maintenance. please try again later")
+		return "", fmt.Errorf("the service is temporarily unavailable, please try again later")
 	default:
 		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
