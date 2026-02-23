@@ -10,6 +10,8 @@
 
 [![Discord](https://img.shields.io/badge/Discord-7289DA?logo=discord&logoColor=white)](https://discord.gg/2xrMh7qX6m)⠀[![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?logo=telegram&logoColor=white)](https://t.me/+Ka9i6CNwe71hMWQy)
 
+<a href="https://trendshift.io/repositories/15161" target="_blank"><img src="https://trendshift.io/api/badge/repositories/15161" alt="vxcontrol%2Fpentagi | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+
 </div>
 
 ## 📖 Table of Contents
@@ -662,6 +664,77 @@ Visit [localhost:8443](https://localhost:8443) to access PentAGI Web UI (default
 > `PROXY_URL` is a global proxy URL for all LLM providers and external search systems. You can use it for isolation from external networks.
 >
 > The `docker-compose.yml` file runs the PentAGI service as root user because it needs access to docker.sock for container management. If you're using TCP/IP network connection to Docker instead of socket file, you can remove root privileges and use the default `pentagi` user for better security.
+
+### Accessing PentAGI from External Networks
+
+By default, PentAGI binds to `127.0.0.1` (localhost only) for security. To access PentAGI from other machines on your network, you need to configure external access.
+
+#### Configuration Steps
+
+1. **Update `.env` file** with your server's IP address:
+
+```bash
+# Network binding - allow external connections
+PENTAGI_LISTEN_IP=0.0.0.0
+PENTAGI_LISTEN_PORT=8443
+
+# Public URL - use your actual server IP or hostname
+# Replace 192.168.1.100 with your server's IP address
+PUBLIC_URL=https://192.168.1.100:8443
+
+# CORS origins - list all URLs that will access PentAGI
+# Include localhost for local access AND your server IP for external access
+CORS_ORIGINS=https://localhost:8443,https://192.168.1.100:8443
+```
+
+> [!IMPORTANT]
+> - Replace `192.168.1.100` with your actual server's IP address
+> - Do NOT use `0.0.0.0` in `PUBLIC_URL` or `CORS_ORIGINS` - use the actual IP address
+> - Include both localhost and your server IP in `CORS_ORIGINS` for flexibility
+
+2. **Recreate containers** to apply the changes:
+
+```bash
+docker compose down
+docker compose up -d --force-recreate
+```
+
+3. **Verify port binding:**
+
+```bash
+docker ps | grep pentagi
+```
+
+You should see `0.0.0.0:8443->8443/tcp` or `:::8443->8443/tcp`.
+
+If you see `127.0.0.1:8443->8443/tcp`, the environment variable wasn't picked up. In this case, directly edit `docker-compose.yml` line 31:
+
+```yaml
+ports:
+  - "0.0.0.0:8443:8443"
+```
+
+Then recreate containers again.
+
+4. **Configure firewall** to allow incoming connections on port 8443:
+
+```bash
+# Ubuntu/Debian with UFW
+sudo ufw allow 8443/tcp
+sudo ufw reload
+
+# CentOS/RHEL with firewalld
+sudo firewall-cmd --permanent --add-port=8443/tcp
+sudo firewall-cmd --reload
+```
+
+5. **Access PentAGI:**
+
+- **Local access:** `https://localhost:8443`
+- **Network access:** `https://your-server-ip:8443`
+
+> [!NOTE]
+> You'll need to accept the self-signed SSL certificate warning in your browser when accessing via IP address.
 
 ### Assistant Configuration
 
@@ -1442,9 +1515,9 @@ OAuth integration with GitHub and Google allows users to authenticate using thei
 - Access to user profile information from GitHub/Google accounts
 - Seamless integration with existing development workflows
 
-For using GitHub OAuth you need to create a new OAuth application in your GitHub account and set the `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` in `.env` file.
+For using GitHub OAuth you need to create a new OAuth application in your GitHub account and set the `OAUTH_GITHUB_CLIENT_ID` and `OAUTH_GITHUB_CLIENT_SECRET` in `.env` file.
 
-For using Google OAuth you need to create a new OAuth application in your Google account and set the `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env` file.
+For using Google OAuth you need to create a new OAuth application in your Google account and set the `OAUTH_GOOGLE_CLIENT_ID` and `OAUTH_GOOGLE_CLIENT_SECRET` in `.env` file.
 
 ### Docker Image Configuration
 
