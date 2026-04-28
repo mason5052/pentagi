@@ -25,7 +25,8 @@ This is the shortest path when the needed packages are available in your chosen 
 ```dockerfile
 FROM vxcontrol/kali-linux:systemd
 
-RUN apt update && apt install -y openvas gvm \
+RUN DEBIAN_FRONTEND=noninteractive apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y openvas gvm \
     && rm -rf /var/lib/apt/lists/*
 
 # Provide your own modified copy of the upstream entrypoint that starts both
@@ -104,7 +105,7 @@ If OpenVAS is unavailable or not ready, continue with other tools and report the
 
 ## Troubleshooting
 
-### `apt install openvas gvm` Fails or the Packages Are Missing
+### `apt-get install openvas gvm` Fails or the Packages Are Missing
 
 Package names and repository availability can change across distro states. Verify your package sources, then fall back to the source-build route if the package-install path is unavailable.
 
