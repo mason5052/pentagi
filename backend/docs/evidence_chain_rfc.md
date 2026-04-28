@@ -18,7 +18,7 @@ Issue [#235](https://github.com/vxcontrol/pentagi/issues/235) proposes signed ev
 
 ## Proposed Receipt Chain
 
-Each meaningful operation can emit a signed receipt. Receipts form a hash-linked chain or DAG:
+Each meaningful operation can emit a signed receipt. Receipts form a hash-linked DAG, where a single-parent chain is just a simpler special case:
 
 ```text
 flow_start -> task_created -> subtask_started -> toolcall_finished -> artifact_recorded -> report_created
@@ -27,7 +27,7 @@ flow_start -> task_created -> subtask_started -> toolcall_finished -> artifact_r
 A receipt should include:
 
 - `receipt_id`: stable identifier for the signed receipt.
-- `parent_receipt_ids`: prior receipts this event depends on.
+- `parent_receipt_ids`: ordered identifiers for the immediate parent receipts this event depends on.
 - `flow_id`, `task_id`, `subtask_id`, and `toolcall_id` when available.
 - `event_type`: for example `toolcall_started`, `toolcall_finished`, `artifact_recorded`, or `report_created`.
 - `actor_type`: agent, user, system, or external tool.
@@ -35,7 +35,7 @@ A receipt should include:
 - `input_hash` and `output_hash` for data that should not be embedded directly.
 - `artifact_hashes` for files, screenshots, logs, exports, or final reports.
 - `created_at` using a server-side timestamp.
-- `previous_hash` or a sorted parent hash list.
+- `parent_hashes`: ordered hashes of the immediate parent receipts, sorted by `parent_receipt_ids` before signing.
 - `signature` and `public_key_id`.
 
 Example shape:
@@ -54,8 +54,8 @@ Example shape:
   "input_hash": "sha256:...",
   "output_hash": "sha256:...",
   "artifact_hashes": ["sha256:..."],
-  "created_at": "2026-04-22T00:00:00Z",
-  "parent_hash": "sha256:...",
+  "created_at": "YYYY-MM-DDTHH:MM:SSZ",
+  "parent_hashes": ["sha256:..."],
   "signature": "ed25519:...",
   "public_key_id": "pentagi-instance-2026-04"
 }
@@ -67,9 +67,10 @@ Ed25519 is a good default for compact signatures and simple verification. The si
 
 Recommended rules:
 
-- Sign canonical JSON or another deterministic encoding.
+- Sign the JSON Canonicalization Scheme (JCS, RFC 8785) byte representation, or explicitly name another deterministic encoding if the implementation chooses a different format.
 - Hash large inputs, outputs, and artifacts instead of embedding them in every receipt.
 - Include enough metadata to identify the exact flow/task/subtask/toolcall source rows.
+- Sort parent receipts by `receipt_id` before computing `parent_hashes` so the signed payload stays reproducible across implementations.
 - Keep public keys exportable with the evidence package.
 - Rotate signing keys by introducing a new `public_key_id`, not by rewriting old receipts.
 
